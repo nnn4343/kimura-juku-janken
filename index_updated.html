@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>木村塾じゃんけん大会</title>
+<style>
+:root{
+  --red:#d92d20;
+  --blue:#1769aa;
+  --yellow:#f5c542;
+  --bg:#f4f7fb;
+  --card:#fff;
+  --text:#172033;
+  --muted:#667085;
+  --border:#d9e1ec;
+  --green:#18864b;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+  line-height:1.55;
+}
+header{
+  background:linear-gradient(135deg,var(--red),var(--blue));
+  color:#fff;
+  padding:22px 16px 18px;
+  text-align:center;
+}
+header h1{margin:0;font-size:23px;letter-spacing:.04em}
+header p{margin:5px 0 0;font-size:12px;opacity:.9}
+main{max-width:900px;margin:0 auto;padding:14px}
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:14px;
+  box-shadow:0 3px 12px rgba(20,40,70,.05);
+}
+h2{font-size:18px;margin:0 0 12px}
+h3{font-size:15px;margin:16px 0 8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}
+input,select{
+  width:100%;padding:11px 10px;border:1px solid #c9d3e1;border-radius:10px;
+  font-size:16px;background:#fff;color:var(--text);
+}
+button{
+  border:0;border-radius:10px;padding:11px 14px;font-size:15px;font-weight:700;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.primary{background:var(--blue);color:#fff}
+.red{background:var(--red);color:#fff}
+.yellow{background:var(--yellow);color:#382d00}
+.gray{background:#e9eef5;color:#243044}
+.small{font-size:12px;padding:8px 10px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.notice{
+  background:#fff8d9;border-left:5px solid var(--yellow);
+  padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:12px;
+}
+.tabs{display:flex;gap:6px;overflow:auto;margin-bottom:12px}
+.tab{
+  white-space:nowrap;background:#e8edf4;color:#263348;padding:10px 13px;
+}
+.tab.active{background:var(--red);color:#fff}
+.panel{display:none}.panel.active{display:block}
+.stats{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0;
+}
+.stat{
+  background:#f7f9fc;border:1px solid var(--border);border-radius:11px;
+  padding:10px;text-align:center;
+}
+.stat .n{font-size:20px;font-weight:800}
+.stat .l{font-size:11px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 7px;border-bottom:1px solid #e5eaf1;text-align:left;vertical-align:middle}
+th{background:#f1f5f9;position:sticky;top:0;z-index:1}
+.num{text-align:right;white-space:nowrap}
+.rank1{font-weight:800;color:var(--red)}
+.ranktie{font-weight:700;color:var(--blue)}
+.empty{color:var(--muted);text-align:center;padding:20px}
+.record{
+  border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:9px;
+  background:#fff;
+}
+.record-head{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.record-title{font-weight:800}
+.record-meta{font-size:12px;color:var(--muted);margin-top:4px}
+.record-money{font-size:19px;font-weight:800;color:var(--red)}
+.participants{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:#eef4fb;border-radius:999px;padding:4px 9px;font-size:12px}
+.loser{background:#ffe9e7;color:#a51e17;font-weight:700}
+.checkrow{display:flex;gap:9px;align-items:flex-start}
+.checkrow input{width:auto;margin-top:4px}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:5px 0 30px}
+@media(max-width:620px){
+  .grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  th,td{padding:8px 5px}
+}
+
+.people-table th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+.people-table th.sortable:hover{filter:brightness(.97)}
+.people-table .loss-group{background:#fff3f3}.people-table th.loss-group{background:#ffe1e1}
+.people-table .pay-group{background:#f3f8ff}.people-table th.pay-group{background:#dfeeff}
+.people-table .party-group{background:#f6f0ff}.people-table th.party-group{background:#e9ddff}
+.people-table .point-group{background:#effaf1}.people-table th.point-group{background:#d9f2dc}
+</style>
+</head>
+<body>
+<header>
+  <h1>木村塾じゃんけん大会</h1>
+  <p>じゃんけんの記録・個人集計・店舗集計</p>
+</header>
+
+<main>
+  <div class="notice">
+    このページは<strong>このiPhone内だけで使う自分用</strong>です。記録はブラウザの保存領域に保存されます。
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('input',this)">記録入力</button>
+    <button class="tab" onclick="showTab('people',this)">個人集計</button>
+    <button class="tab" onclick="showTab('shops',this)">店舗集計</button>
+    <button class="tab" onclick="showTab('records',this)">記録一覧</button>
+  </div>
+
+  <section id="input" class="panel active">
+    <div class="card">
+      <h2>じゃんけんを記録する</h2>
+      <div class="grid">
+        <div class="field">
+          <label>日付</label>
+          <input type="date" id="date">
+        </div>
+        <div class="field">
+          <label>曜日</label>
+          <input type="text" id="weekday" readonly placeholder="日付から自動表示">
+        </div>
+        <div class="field">
+          <label>店名</label>
+          <input type="text" id="shop" placeholder="例：○○食堂">
+        </div>
+        <div class="field">
+          <label>支払額（円）</label>
+          <input type="number" id="amount" min="0" step="1" inputmode="numeric" placeholder="例：6000">
+        </div>
+      </div>
+
+      <h3>参加者</h3>
+      <div id="participantInputs"></div>
+      <div class="actions">
+        <button class="gray small" onclick="addParticipant()">＋参加者を追加</button>
+        <button class="gray small" onclick="removeParticipant()">−最後の参加者を削除</button>
+      </div>
+
+      <h3>敗者</h3>
+      <select id="loser"><option value="">参加者を入力してください</option></select>
+
+      <div class="actions">
+        <button class="primary" onclick="addRecord()">この内容を登録</button>
+        <button class="gray" onclick="clearForm()">入力をクリア</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>現在の記録</h2>
+      <div class="stats" id="quickStats"></div>
+    </div>
+  </section>
+
+  <section id="people" class="panel">
+    <div class="card">
+      <h2>個人集計</h2>
+      <div id="peopleStats"></div>
+    </div>
+  </section>
+
+  <section id="shops" class="panel">
+    <div class="card">
+      <h2>店舗集計</h2>
+      <div id="shopStats"></div>
+    </div>
+  </section>
+
+  <section id="records" class="panel">
+    <div class="card">
+      <h2>記録一覧</h2>
+      <div class="actions" style="margin-top:0;margin-bottom:10px">
+        <button class="red small" onclick="deleteSelected()">選択した記録を削除</button>
+        <button class="gray small" onclick="selectAllRecords(true)">すべて選択</button>
+        <button class="gray small" onclick="selectAllRecords(false)">選択解除</button>
+      </div>
+      <div id="recordList"></div>
+    </div>
+  </section>
+
+  <div class="card">
+    <h2>データ管理</h2>
+    <div class="actions" style="margin-top:0">
+      <button class="gray small" onclick="exportData()">データを書き出す</button>
+      <button class="gray small" onclick="document.getElementById('importFile').click()">データを読み込む</button>
+      <button class="red small" onclick="deleteAll()">全記録を削除</button>
+    </div>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importData(event)">
+    <p style="font-size:12px;color:#667085;margin-bottom:0">
+      ※「データを書き出す」を使うと、記録のバックアップをファイルとして保存できます。
+    </p>
+  </div>
+
+  <footer>木村塾じゃんけん大会・自分用版</footer>
+</main>
+
+<script>
+const STORAGE_KEY = "kimurajuku_janken_records_v1";
+let records = [];
+let participantCount = 3;
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    records = raw ? JSON.parse(raw) : [];
+    if(!Array.isArray(records)) records=[];
+  }catch(e){ records=[]; }
+}
+
+function saveData(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  renderAll();
+}
+
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[m]));
+}
+
+function weekdayJP(date){
+  if(!date) return "";
+  const d = new Date(date+"T00:00:00");
+  return ["日","月","火","水","木","金","土"][d.getDay()];
+}
+
+function setToday(){
+  const d = new Date();
+  const iso = new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  document.getElementById("date").value=iso;
+  document.getElementById("weekday").value=weekdayJP(iso)+"曜日";
+}
+
+function buildParticipantInputs(){
+  const box=document.getElementById("participantInputs");
+  box.innerHTML="";
+  for(let i=1;i<=participantCount;i++){
+    const div=document.createElement("div");
+    div.className="field";
+    div.style.marginBottom="8px";
+    div.innerHTML=`<label>参加者 ${i}</label><input type="text" class="participant" data-index="${i}" placeholder="名前">`;
+    box.appendChild(div);
+  }
+  updateLoserSelect();
+}
+
+function addParticipant(){
+  if(participantCount>=10){ alert("参加者は10人までです。"); return; }
+  participantCount++;
+  buildParticipantInputs();
+}
+function removeParticipant(){
+  if(participantCount<=2){ alert("参加者は2人以上にしてください。"); return; }
+  participantCount--;
+  buildParticipantInputs();
+}
+
+function updateLoserSelect(){
+  const names=[...document.querySelectorAll(".participant")].map(x=>x.value.trim()).filter(Boolean);
+  const sel=document.getElementById("loser");
+  const old=sel.value;
+  sel.innerHTML='<option value="">敗者を選択</option>';
+  names.forEach(n=>{
+    const o=document.createElement("option");
+    o.value=n;o.textContent=n;sel.appendChild(o);
+  });
+  if(names.includes(old)) sel.value=old;
+}
+document.addEventListener("input",e=>{
+  if(e.target.classList.contains("participant")) updateLoserSelect();
+  if(e.target.id==="date") document.getElementById("weekday").value=weekdayJP(e.target.value)+"曜日";
+});
+
+function addRecord(){
+  const date=document.getElementById("date").value;
+  const shop=document.getElementById("shop").value.trim();
+  const amount=Number(document.getElementById("amount").value);
+  const names=[...document.querySelectorAll(".participant")].map(x=>x.value.trim()).filter(Boolean);
+  const loser=document.getElementById("loser").value;
+
+  if(!date){alert("日付を入力してください。");return;}
+  if(!shop){alert("店名を入力してください。");return;}
+  if(!Number.isFinite(amount)||amount<0){alert("支払額を正しく入力してください。");return;}
+  if(names.length<2){alert("参加者を2人以上入力してください。");return;}
+  if(new Set(names).size!==names.length){alert("参加者名が重複しています。別の名前にしてください。");return;}
+  if(!loser){alert("敗者を選択してください。");return;}
+
+  records.push({
+    id: Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,8),
+    date, weekday:weekdayJP(date)+"曜日", shop, amount, participants:names, loser
+  });
+  saveData();
+  alert("登録しました。");
+  clearForm(false);
+  showTabByName("input");
+}
+
+function clearForm(resetDate=true){
+  if(resetDate) setToday();
+  document.getElementById("shop").value="";
+  document.getElementById("amount").value="";
+  document.querySelectorAll(".participant").forEach(x=>x.value="");
+  updateLoserSelect();
+}
+
+function showTab(name,btn){
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  document.getElementById(name).classList.add("active");
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  if(btn) btn.classList.add("active");
+  else{
+    const map={input:"記録入力",people:"個人集計",shops:"店舗集計",records:"記録一覧"};
+    [...document.querySelectorAll(".tab")].find(t=>t.textContent===map[name])?.classList.add("active");
+  }
+}
+function showTabByName(name){ showTab(name,null); }
+
+let peopleSortKey="name";
+let peopleSortDir=1;
+
+function isEnglishName(name){
+  return /^[A-Za-z][A-Za-z .'-]*$/.test(String(name||"").trim());
+}
+function calcRecordPoints(r){
+  const result={};
+  const eligibleOthers=r.participants.filter(name=>name!==r.loser && !isEnglishName(name));
+  const share=eligibleOthers.length ? 60/eligibleOthers.length : 0;
+  r.participants.forEach(name=>{
+    if(name===r.loser) result[name]=(result[name]||0)-60;
+    else if(!isEnglishName(name)) result[name]=(result[name]||0)+share;
+    else result[name]=(result[name]||0);
+  });
+  return result;
+}
+
+function calcPeople(){
+  const map={};
+  records.forEach(r=>{
+    const pointMap=calcRecordPoints(r);
+    r.participants.forEach(name=>{
+      if(!map[name]) map[name]={name,plays:0,losses:0,paid:0,points:0};
+      map[name].plays++;
+      map[name].points+=pointMap[name]||0;
+      if(r.loser===name){map[name].losses++;map[name].paid+=Number(r.amount)||0;}
+    });
+  });
+  const arr=Object.values(map);
+  const ranks=(vals)=>{const uniq=[...new Set(vals)].sort((a,b)=>b-a);return v=>uniq.indexOf(v)+1;};
+  const lossRank=ranks(arr.map(x=>x.plays?x.losses/x.plays:0));
+  const paidRank=ranks(arr.map(x=>x.paid));
+  arr.forEach(x=>{
+    x.lossRate=x.plays?x.losses/x.plays:0;
+    x.lossRateRank=lossRank(x.lossRate);
+    x.paidRank=paidRank(x.paid);
+    x.lossParty=x.losses?x.paid/x.losses:0;
+  });
+  const lpRank=ranks(arr.map(x=>x.lossParty));
+  arr.forEach(x=>x.lossPartyRank=lpRank(x.lossParty));
+  const pointRank=ranks(arr.map(x=>x.points));
+  arr.forEach(x=>x.pointRank=pointRank(x.points));
+  return arr;
+}
+function sortPeople(key){
+  if(peopleSortKey===key) peopleSortDir*=-1;
+  else {peopleSortKey=key; peopleSortDir=key==="name"?1:-1;}
+  renderPeople();
+}
+function sortPeopleRows(arr){
+  return arr.slice().sort((a,b)=>{
+    const av=peopleSortKey==="name"?a.name:a[peopleSortKey];
+    const bv=peopleSortKey==="name"?b.name:b[peopleSortKey];
+    let c=typeof av==="string"?String(av).localeCompare(String(bv),"ja"):av-bv;
+    if(c===0)c=a.name.localeCompare(b.name,"ja");
+    return c*peopleSortDir;
+  });
+}
+function peopleTh(key,label,cls=""){
+  const arrow=peopleSortKey===key?(peopleSortDir===1?"↑":"↓"):"↕";
+  return `<th class="${cls} sortable" onclick="sortPeople('${key}')">${label} ${arrow}</th>`;
+}
+function fmtPoints(n){
+  if(Math.abs(n-Math.round(n))<1e-9)return String(Math.round(n));
+  return n.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+}
+
+function fmtYen(n){return Math.round(n).toLocaleString("ja-JP")+"円";}
+function fmtPct(n){return (n*100).toFixed(1)+"%";}
+function rankText(r){return r===1?'<span class="rank1">1位</span>':r+"位";}
+
+function renderPeople(){
+  const box=document.getElementById("peopleStats");
+  const arr=sortPeopleRows(calcPeople());
+  if(!arr.length){box.innerHTML='<div class="empty">まだ記録がありません。</div>';return;}
+  box.innerHTML=`
+    <div style="overflow:auto"><table class="people-table"><thead><tr>
+      ${peopleTh("name","名前","name-col")}
+      ${peopleTh("plays","参加","loss-group num")}
+      ${peopleTh("losses","負け数","loss-group num")}
+      ${peopleTh("lossRate","負け率","loss-group num")}
+      ${peopleTh("lossRateRank","順位","loss-group num")}
+      ${peopleTh("paid","支払額","pay-group num")}
+      ${peopleTh("paidRank","順位","pay-group num")}
+      ${peopleTh("lossParty","負けパ","party-group num")}
+      ${peopleTh("lossPartyRank","順位","party-group num")}
+      ${peopleTh("points","ポイント","point-group num")}
+      ${peopleTh("pointRank","順位","point-group num")}
+    </tr></thead><tbody>
+      ${arr.map(x=>`<tr>
+        <td class="name-col"><strong>${esc(x.name)}</strong></td>
+        <td class="loss-group num">${x.plays}</td><td class="loss-group num">${x.losses}</td>
+        <td class="loss-group num">${fmtPct(x.lossRate)}</td><td class="loss-group num">${rankText(x.lossRateRank)}</td>
+        <td class="pay-group num">${fmtYen(x.paid)}</td><td class="pay-group num">${rankText(x.paidRank)}</td>
+        <td class="party-group num">${x.losses?fmtYen(x.lossParty):"—"}</td><td class="party-group num">${x.losses?rankText(x.lossPartyRank):"—"}</td>
+        <td class="point-group num">${fmtPoints(x.points)}</td><td class="point-group num">${rankText(x.pointRank)}</td>
+      </tr>`).join("")}
+    </tbody></table></div>
+    <p style="font-size:11px;color:#667085;margin-bottom:0">※見出しをタップすると、その項目で昇順・降順に並べ替えできます。同じ数値は同順位です。</p>`;
+}
+
+function renderShops(){
+  const box=document.getElementById("shopStats");
+  const map={};
+  records.forEach(r=>{
+    if(!map[r.shop])map[r.shop]={shop:r.shop,games:0,total:0};
+    map[r.shop].games++;
+    map[r.shop].total+=Number(r.amount)||0;
+  });
+  const arr=Object.values(map).sort((a,b)=>a.shop.localeCompare(b.shop,"ja"));
+  if(!arr.length){box.innerHTML='<div class="empty">まだ記録がありません。</div>';return;}
+  box.innerHTML=`<div style="overflow:auto"><table>
+  <thead><tr><th>店名</th><th class="num">ゲーム数</th><th class="num">総額</th><th class="num">1ゲーム平均</th></tr></thead>
+  <tbody>${arr.map(x=>`<tr>
+    <td><strong>${esc(x.shop)}</strong></td>
+    <td class="num">${x.games}</td>
+    <td class="num">${fmtYen(x.total)}</td>
+    <td class="num">${fmtYen(x.total/x.games)}</td>
+  </tr>`).join("")}</tbody></table></div>`;
+}
+
+function renderRecords(){
+  const box=document.getElementById("recordList");
+  if(!records.length){box.innerHTML='<div class="empty">まだ記録がありません。</div>';return;}
+  const arr=[...records].sort((a,b)=>b.date.localeCompare(a.date));
+  box.innerHTML=arr.map(r=>`
+    <div class="record">
+      <div class="checkrow">
+        <input type="checkbox" class="recordCheck" value="${esc(r.id)}">
+        <div style="flex:1">
+          <div class="record-head">
+            <div>
+              <div class="record-title">${esc(r.date)}（${esc(r.weekday||weekdayJP(r.date)+"曜日")}）・${esc(r.shop)}</div>
+              <div class="record-meta">敗者：<span class="loser">${esc(r.loser)}</span></div>
+            </div>
+            <div class="record-money">${fmtYen(r.amount)}</div>
+          </div>
+          <div class="participants">
+            ${r.participants.map(n=>`<span class="chip ${n===r.loser?'loser':''}">${esc(n)}</span>`).join("")}
+          </div>
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+function renderQuick(){
+  const games=records.length;
+  const total=records.reduce((s,r)=>s+(Number(r.amount)||0),0);
+  const people=new Set(records.flatMap(r=>r.participants)).size;
+  document.getElementById("quickStats").innerHTML=`
+    <div class="stat"><div class="n">${games}</div><div class="l">ゲーム数</div></div>
+    <div class="stat"><div class="n">${people}</div><div class="l">参加者数</div></div>
+    <div class="stat"><div class="n">${fmtYen(total)}</div><div class="l">支払総額</div></div>`;
+}
+
+function renderAll(){renderQuick();renderPeople();renderShops();renderRecords();}
+
+function selectAllRecords(flag){
+  document.querySelectorAll(".recordCheck").forEach(c=>c.checked=flag);
+}
+
+function deleteSelected(){
+  const ids=[...document.querySelectorAll(".recordCheck:checked")].map(x=>x.value);
+  if(!ids.length){alert("削除する記録を選択してください。");return;}
+  if(!confirm(ids.length+"件の記録を削除します。よろしいですか？"))return;
+  records=records.filter(r=>!ids.includes(r.id));
+  saveData();
+}
+
+function deleteAll(){
+  if(!records.length){alert("削除する記録がありません。");return;}
+  if(!confirm("すべての記録を削除します。本当によろしいですか？"))return;
+  if(!confirm("この操作は元に戻せません。全記録を削除しますか？"))return;
+  records=[];
+  saveData();
+}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify(records,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="木村塾じゃんけん大会_バックアップ_"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function importData(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      if(!Array.isArray(data))throw new Error();
+      const ok=data.every(r=>r&&r.date&&r.shop&&Array.isArray(r.participants)&&r.loser!==undefined);
+      if(!ok)throw new Error();
+      if(!confirm("現在の記録を置き換えて、読み込んだデータを使用します。よろしいですか？"))return;
+      records=data.map(r=>({...r,id:r.id||Date.now().toString(36)+Math.random().toString(36).slice(2)}));
+      saveData();
+      alert("データを読み込みました。");
+    }catch(err){alert("読み込めるデータではありません。");}
+    e.target.value="";
+  };
+  reader.readAsText(file);
+}
+
+loadData();
+setToday();
+buildParticipantInputs();
+renderAll();
+</script>
+</body>
+</html>
